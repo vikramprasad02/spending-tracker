@@ -17,7 +17,7 @@ import pickle
 
 class LineItem(object):
 
-    def __init__(self, csv_line):
+    def __init__(self, line_item_keywords):
         '''
         Takes in a line with comma-seperated elements pulled from a spreadsheet
         downloaded from a credit card statement. Each of these lines describes a
@@ -26,10 +26,11 @@ class LineItem(object):
         '''
 
         #unpack csv_line
-        date, establishment, amount = self.strip_line(csv_line)
+        date, description, amount = line_item_keywords
 
         #cleanup date
         month, day, year = self.unpack_date(date)
+        
         #classify
         category = self.categorize(establishment)
 
@@ -41,14 +42,6 @@ class LineItem(object):
         self.amount = amount
         self.establishment = establishment
         self.category = category
-
-    def strip_line(self, csv_line):
-        '''
-        Takes in a line with comma-seperated elements and returns the date, 
-        establishment, and amount associated with that line item.
-        '''
-
-        pass
 
     def categorize(self, establishment):
         '''

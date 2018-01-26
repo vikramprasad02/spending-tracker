@@ -19,10 +19,18 @@ def tokenize_file(filename):
     '''
     Function takes in a CSV and returns a list of the lines
     '''
+
+    tokens_by_line = []
+    
     with open(filename) as f:
         for line in f:
-            #split up information
-            print line
+            words = [x.strip() for x in line.split(',')]
+            tokens = []
+            for elem in words:
+                if len(elem)>0: tokens.append(elem)
+            tokens_by_line.append(tokens)
+
+    return tokens_by_line
     
 if __name__ == "__main__":
 
@@ -30,4 +38,5 @@ if __name__ == "__main__":
     fn = sys.argv[1] #first arg is the python file being executed
 
     #tokenizes csv into a list of lines
-    lines = tokenize_file(fn)
+    line_item_features = tokenize_file(fn)
+
