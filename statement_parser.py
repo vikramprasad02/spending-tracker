@@ -15,6 +15,8 @@ import os
 import numpy as np
 import pickle
 
+import object_library as lib
+
 def tokenize_file(filename):
     '''
     Function takes in a CSV and returns a list of the lines
@@ -39,4 +41,5 @@ if __name__ == "__main__":
 
     #tokenizes csv into a list of lines
     line_item_features = tokenize_file(fn)
-
+    for purchase in line_item_features:
+        purchase_obj = lib.LineItem(purchase)
