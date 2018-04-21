@@ -1,4 +1,4 @@
-# spending-tracker
+#spending-tracker
 
 This repository houses all the files to develop my personal spending
 tracker. Over time, it will come to add many of the features available

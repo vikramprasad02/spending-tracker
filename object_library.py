@@ -17,6 +17,7 @@ import pickle
 
 class LineItem(object):
 
+    #object attributes
     def __init__(self, line_item_keywords):
         '''
         Takes in a line with comma-seperated elements pulled from a spreadsheet
