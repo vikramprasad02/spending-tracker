@@ -15,93 +15,250 @@ import sys
 import os
 import numpy as np
 import pickle
+import pandas as pd
 
 class Labeler(object):
    
     #pre-defined list of categories I am interested in
+    #KEYWORDS_BY_CATEGORIES = {
+    #        "rent" : [],
+    #        "car payment" : [],
+    #        "transportation" : [ 'uber', 
+    #                             'lyft', 
+    #                             'caltrain', 
+    #                             'clipper', 
+    #                             'bart', 
+    #                             'hertz',
+    #                             'oil',
+    #                             'fuel',
+    #                             'gas'],
+    #        "restaurants/bars" : ['pizza',
+    #                             'caffe macs',
+    #                             'bar ',
+    #                             ' bar',
+    #                             'restaurant'],
+    #        "fast food" : ['taco bell',
+    #                        'chipotle',
+    #                        'subway',
+    #                        'taqueria',
+    #                        'vend'],
+    #        "travel" : ['delta',
+    #                    'air lines'],
+    #        "entertainment" : [ 'museum',
+    #                            'itunes'],
+    #        "subscriptions" : ['spotify',
+    #                            'google storage',
+    #                            'dropbox',
+    #                            'hulu',
+    #                            'league pass'],
+    #        "insurance/health" : [  "lifeloc",
+    #                                "assurant",
+    #                                "medical",
+    #                                "clinic",
+    #                                "hospital"],
+    #        "groceries" : [ 'meijer', 
+    #                        'safeway',
+    #                        'trader joe',
+    #                        'kroger'],
+    #        "online shopping" : ['amazon',
+    #                            'target',
+    #                            'macys',
+    #                            'ae.com',
+    #                            'store']        
+    #}
+    
     KEYWORDS_BY_CATEGORIES = {
-            "rent" : [],
-            "car payment" : [],
-            "transportation" : [ 'uber', 
+            "Rent" : [],
+            "Car Payment" : [],
+            "Transportation" : [ 'uber', 
                                  'lyft', 
                                  'caltrain', 
                                  'clipper', 
+                                 'mta',
                                  'bart', 
-                                 'hertz'
+                                 'parking',
+                                 'zipcar',
+                                 'hertz',
                                  'oil',
                                  'fuel',
                                  'gas'],
-            "restaurants/bars" : ['pizza',
-                                 'caffe macs'],
-            "fast food" : [],
-            "travel" : [],
-            "entertainment" : ['museum'],
-            "subscriptions" : ['spotify',
-                                'storage',
+           "Entertainment" : [ 'museum',
+                                'theater',
+                                'theatre',
+                                'ticket',
+                                'event',
+                                'citation',
+                                'itunes'],
+            "Subscriptions" : ['spotify',
+                                'google storage',
+                                'netflix',
+                                'economist',
                                 'dropbox',
-                                'hulu'],
-            "insurance" : [  "lifeloc",
-                             "assurant"],
-            "groceries/household items" : [ 'target', 
-                                             'safeway',
-                                             'meijer'],
-            "online shopping" : ['amazon']        
+                                'hulu',
+                                'league pass'],
+            "Insurance/Health" : [  "lifeloc",
+                                    "assurant",
+                                    "wellnes",
+                                    "optimeyes",
+                                    "medical",
+                                    "fitness",
+                                    "urgent care",
+                                    "clinic",
+                                    "hospital"],
+            "Groceries" : [ 'meijer', 
+                            'safeway',
+                            'trader joe',
+                            'kroger'],
+            "Shopping" : ['amazon',
+                         'target',
+                         'nike.com',
+                         'macys',
+                         'ae.com',
+                         'store'],
+            "Travel"  : ['airport',
+                        'airline',
+                        'air line']
     }
-    
-    
+    SENTINEL_CATEGORY = 'miscellaneous'  
+
     def __init__(self, filename):
         '''
         Takes in a filename for a CSV and creates a dictionary where the
         keys are the purchase descriptions and the values are the category.
         '''
 
-        #create dictionary
-        self.categorized_data = {}
+        ##create dictionary
+        #self.categorized_data = {}
 
-        #get a list of each line item's tokens
-        tokenized_input = self.tokenize_file(filename)
+        ##get a list of each line item's tokens
+        #tokenized_input = self.tokenize_file(filename)
 
-        for line_item in tokenized_input:
-            desc = self.get_purchase_description(line_item)
-            category = self.categorize(desc)
-            self.categorized_data[desc] = category
+        ##categorize each line
+        #for line_item in tokenized_input:
+        #    desc = self.get_purchase_description(line_item)
+        #    category = self.categorize(desc)
+        #    self.categorized_data[desc] = category
 
-    def tokenize_file(self, filename):
+        ##manually label the rest by prompting client
+        #self.client_label()
+
+        self.raw_df = pd.read_csv(filename)
+
+
+    def clean_raw_df(self):
+
+        #data fields we are interested in
+        header = ['Date', 'Description', 'Amount', 'Category']
+
+        abridged_data = []
+        for idx, row in self.raw_df.iterrows():
+
+            #check to make sure this purchase was made for me
+                #Apple purchases bought for other people
+            for_me = self.verify_purchase(row)
+            if not for_me:
+                continue
+            date = row['Date']
+            desc = row['Description']
+            amt = self.clean_amount(row['Amount'])
+            if amt < 0:
+                cat = self.categorize_credit(row)
+            else:
+                cat = self.categorize_purchase(row)
+           
+            new_row = [date, desc, amt, cat]
+            abridged_data.append(new_row)
+
+        self.polished_df = pd.DataFrame(abridged_data, columns=header)
+
+    def clean_amount(self, str_amt):
         '''
-        Function takes in a CSV and returns a list of the lines
+        Takes in an amount in string form, converts to float.
         '''
 
-        tokens_by_line = []
-        
-        with open(filename) as f:
-            for line in f:
-                words = [x.strip() for x in line.split(',')]
-                tokens = []
-                for elem in words:
-                    if len(elem)>0: tokens.append(elem)
-                tokens_by_line.append(tokens)
+        new_amt = str_amt.replace(',', '')
+        new_amt = float(new_amt)
 
-        return tokens_by_line
+        return new_amt
+
+    def verify_purchase(self, row):
+        '''
+        Function that queries client to see if a particular purchase
+        was made for someone else.
+            -Usually it's an Apple purchase made for someone else
+        '''
+
+        concat_desc =   row['Description'] + " " \
+                      + str(row['Doing Business As']) + " "  \
+                      + str(row['Category'])
+        concat_desc = concat_desc.lower()
+   
+        amt = self.clean_amount(row['Amount'])
+        if "apple online store" in concat_desc or amt > 1000:
+           
+            print "Did you purchase this for yourself?"
+            print str(row)
+            response = raw_input('Yes or No? :'  )
+            print "\n\n"
+            response = response.lower()
+            result = response.startswith('y')
     
-    def get_purchase_description(self, line_elements):
+        else:
+            result = True
+
+        return result
+
+    def categorize_credit(self, row):
         '''
-        Returns the purchase description of a lineitem.
+        Function to categorize a line item that had a negative
+        amount, essentially a credit to the account. Could be a
+        CC payment, return, discount, etc.
         '''
 
-        return line_elements[1]
+        concat_desc =   row['Description'] + " " \
+                      + str(row['Doing Business As']) + " "  \
+                      + str(row['Category'])
+        concat_desc = concat_desc.lower()
+ 
 
-    def categorize(self, description):
-        '''
-        Function takes in a purchase description and has manual hard-coded
-        definitions of what category it belongs in
-        '''
-
+        if ('online payment' in concat_desc) \
+            or ('payment received' in concat_desc):
+                return "CC PAYMENT"
         
-        description = description.lower()
+        else:
+            return "RETURN/CREDIT"
 
+    def categorize_purchase(self, row):
+        '''
+        Function to categorize a line item that had a postiive amount,
+        essentially a debit from the account. Typical line item.
+        '''
+        
+        concat_desc =   row['Description'] + " " \
+                      + str(row['Doing Business As']) + " "  \
+                      + str(row['Category'])
+        concat_desc = concat_desc.lower()
+        
         for cat, keywords in self.KEYWORDS_BY_CATEGORIES.items():
             for kw in keywords:
-                if kw in description:
+                if kw in concat_desc:
                     return cat
+        
+        if ("restaurant" in concat_desc) or ("bar" in concat_desc):
+            return "Restaurant/Bar"
 
-        return "MISC"
+        elif ("travel" in concat_desc):
+            return "Travel"
+       
+        elif ('merchandise' in concat_desc):
+            return "Shopping"
+
+        elif ('service' in concat_desc):
+            return "Services"
+        
+        for category in self.KEYWORDS_BY_CATEGORIES.keys():
+            if category.lower() in concat_desc:
+                return category
+
+        return "Miscellaneous"
+
