@@ -20,57 +20,10 @@ import pandas as pd
 class Labeler(object):
    
     #pre-defined list of categories I am interested in
-    #KEYWORDS_BY_CATEGORIES = {
-    #        "rent" : [],
-    #        "car payment" : [],
-    #        "transportation" : [ 'uber', 
-    #                             'lyft', 
-    #                             'caltrain', 
-    #                             'clipper', 
-    #                             'bart', 
-    #                             'hertz',
-    #                             'oil',
-    #                             'fuel',
-    #                             'gas'],
-    #        "restaurants/bars" : ['pizza',
-    #                             'caffe macs',
-    #                             'bar ',
-    #                             ' bar',
-    #                             'restaurant'],
-    #        "fast food" : ['taco bell',
-    #                        'chipotle',
-    #                        'subway',
-    #                        'taqueria',
-    #                        'vend'],
-    #        "travel" : ['delta',
-    #                    'air lines'],
-    #        "entertainment" : [ 'museum',
-    #                            'itunes'],
-    #        "subscriptions" : ['spotify',
-    #                            'google storage',
-    #                            'dropbox',
-    #                            'hulu',
-    #                            'league pass'],
-    #        "insurance/health" : [  "lifeloc",
-    #                                "assurant",
-    #                                "medical",
-    #                                "clinic",
-    #                                "hospital"],
-    #        "groceries" : [ 'meijer', 
-    #                        'safeway',
-    #                        'trader joe',
-    #                        'kroger'],
-    #        "online shopping" : ['amazon',
-    #                            'target',
-    #                            'macys',
-    #                            'ae.com',
-    #                            'store']        
-    #}
-    
     KEYWORDS_BY_CATEGORIES = {
-            "Rent" : [],
-            "Car Payment" : [],
-            "Transportation" : [ 'uber', 
+        "Rent"              :   [],
+        "Car Payment"       :   [],
+        "Transportation"    :   ['uber', 
                                  'lyft', 
                                  'caltrain', 
                                  'clipper', 
@@ -82,44 +35,44 @@ class Labeler(object):
                                  'oil',
                                  'fuel',
                                  'gas'],
-           "Entertainment" : [ 'museum',
-                                'theater',
-                                'theatre',
-                                'ticket',
-                                'event',
-                                'citation',
-                                'itunes'],
-            "Subscriptions" : ['spotify',
-                                'google storage',
-                                'netflix',
-                                'economist',
-                                'dropbox',
-                                'hulu',
-                                'league pass'],
-            "Insurance/Health" : [  "lifeloc",
-                                    "assurant",
-                                    "wellnes",
-                                    "optimeyes",
-                                    "medical",
-                                    "fitness",
-                                    "urgent care",
-                                    "clinic",
-                                    "hospital"],
-            "Groceries" : [ 'meijer', 
-                            'safeway',
-                            'trader joe',
-                            'kroger'],
-            "Shopping" : ['amazon',
-                         'target',
-                         'nike.com',
-                         'macys',
-                         'ae.com',
-                         'store'],
-            "Travel"  : ['airport',
-                        'airline',
-                        'air line']
+        "Entertainment"      :   ['museum',
+                                 'theater',
+                                 'theatre',
+                                 'ticket',
+                                 'event',
+                                 'citation',
+                                 'itunes'],
+        "Subscriptions"     :   ['spotify',
+                                 'google storage',
+                                 'netflix',
+                                 'economist',
+                                 'dropbox',
+                                 'hulu',
+                                 'league pass'],
+        "Insurance/Health"  :   ["lifeloc",
+                                 "assurant",
+                                 "wellnes",
+                                 "optimeyes",
+                                 "medical",
+                                 "fitness",
+                                 "urgent care",
+                                 "clinic",
+                                 "hospital"],
+        "Groceries"         :   ['meijer', 
+                                 'safeway',
+                                 'trader joe',
+                                 'kroger'],
+        "Shopping"          :   ['amazon',
+                                 'target',
+                                 'nike.com',
+                                 'macys',
+                                 'ae.com',
+                                 'store'],
+        "Travel"            :   ['airport',
+                                 'airline',
+                                 'air line']
     }
-    SENTINEL_CATEGORY = 'miscellaneous'  
+    self.CATCH_ALL_CATEGORY = "Miscellaneous"
 
     def __init__(self, filename):
         '''
@@ -220,7 +173,6 @@ class Labeler(object):
                       + str(row['Category'])
         concat_desc = concat_desc.lower()
  
-
         if ('online payment' in concat_desc) \
             or ('payment received' in concat_desc):
                 return "CC PAYMENT"
@@ -260,5 +212,5 @@ class Labeler(object):
             if category.lower() in concat_desc:
                 return category
 
-        return "Miscellaneous"
+        return self.CATCH_ALL_CATEGORY 
 
