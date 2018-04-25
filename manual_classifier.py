@@ -98,6 +98,21 @@ class Labeler(object):
         self.raw_df = pd.read_csv(filename)
 
 
+    def clean_date(self, date):
+
+        def unpack_date(date):
+            month_idx = date.find('/')
+            day_idx = date.find('/', month_idx+1)
+
+            month = date[:month_idx]
+            day = date[month_idx+1:day_idx]
+            year = date[day_idx+1:]
+
+            return month, day, year
+
+        month_idx, day, year = unpack_date(date)
+        month = constants.MONTHS_BY_INDEX[month_idx]
+        day_of_week_idx = (day + int(2.6*month_idx - 0.2) - 2*
     def clean_raw_df(self):
 
         #data fields we are interested in
