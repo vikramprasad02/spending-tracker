@@ -15,6 +15,7 @@ import sys
 import os
 import numpy as np
 import pickle
+import constants
 import pandas as pd
 
 class Labeler(object):
@@ -72,7 +73,7 @@ class Labeler(object):
                                  'airline',
                                  'air line']
     }
-    self.CATCH_ALL_CATEGORY = "Miscellaneous"
+    CATCH_ALL_CATEGORY = "Miscellaneous"
 
     def __init__(self, filename):
         '''
@@ -104,37 +105,45 @@ class Labeler(object):
             month_idx = date.find('/')
             day_idx = date.find('/', month_idx+1)
 
-            month = date[:month_idx]
-            day = date[month_idx+1:day_idx]
-            year = date[day_idx+1:]
+            month = int(date[:month_idx])
+            day = int(date[month_idx+1:day_idx])
+            year = int(date[day_idx+1:])
 
             return month, day, year
 
         def dow_formula(m, d, y):
 
             var1 = d
-            var2 = int(2.6*m - 0.2)
+            
+            adj_month = m - 2
+            if m <= 2:
+                adj_month = adj_month + 12
+            var2 = int(2.6*adj_month - 0.2)
+
             var3 = 2*20 #assumes 21st century
-            var4 = 2000 + y
+            
+            var4 = y
             if m <= 2:
                 var4 = var4-1
+            
             var5 = int(var4/4)
-            var6 = int(var3/4)
-
-            dow = (var1 + var2 + var3 + var4 + var5 + var6) % 7
-            return result
+            var6 = int(20/4) #assumes 21st century
+            
+            dow = (var1 + var2 - var3 + var4 + var5 + var6) % 7
+            return dow 
         
         month_idx, day, year = unpack_date(date)
         month = constants.MONTHS_BY_INDEX[month_idx]
         dow_idx = dow_formula(month_idx, day, year)
         dow = constants.DAYS_OF_WEEK_BY_INDEX[dow_idx]
 
-        return month, dow, (2000+y)
+        return dow, month, day, (2000+year)
 
     def clean_raw_df(self):
 
         #data fields we are interested in
-        header = ['Date', 'Description', 'Amount', 'Category']
+        header = ['Day', 'Month', 'Date', 'Year',
+                    'Description', 'Amount', 'Category']
 
         abridged_data = []
         for idx, row in self.raw_df.iterrows():
@@ -144,7 +153,7 @@ class Labeler(object):
             for_me = self.verify_purchase(row)
             if not for_me:
                 continue
-            date = row['Date']
+            dow, m, d, y = self.clean_date(row['Date'])
             desc = row['Description']
             amt = self.clean_amount(row['Amount'])
             if amt < 0:
@@ -152,7 +161,7 @@ class Labeler(object):
             else:
                 cat = self.categorize_purchase(row)
            
-            new_row = [date, desc, amt, cat]
+            new_row = [dow, m, d, y, desc, amt, cat]
             abridged_data.append(new_row)
 
         self.polished_df = pd.DataFrame(abridged_data, columns=header)
