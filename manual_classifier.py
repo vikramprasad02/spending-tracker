@@ -110,9 +110,27 @@ class Labeler(object):
 
             return month, day, year
 
+        def dow_formula(m, d, y):
+
+            var1 = d
+            var2 = int(2.6*m - 0.2)
+            var3 = 2*20 #assumes 21st century
+            var4 = 2000 + y
+            if m <= 2:
+                var4 = var4-1
+            var5 = int(var4/4)
+            var6 = int(var3/4)
+
+            dow = (var1 + var2 + var3 + var4 + var5 + var6) % 7
+            return result
+        
         month_idx, day, year = unpack_date(date)
         month = constants.MONTHS_BY_INDEX[month_idx]
-        day_of_week_idx = (day + int(2.6*month_idx - 0.2) - 2*
+        dow_idx = dow_formula(month_idx, day, year)
+        dow = constants.DAYS_OF_WEEK_BY_INDEX[dow_idx]
+
+        return month, dow, (2000+y)
+
     def clean_raw_df(self):
 
         #data fields we are interested in
